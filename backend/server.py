@@ -7,42 +7,22 @@ import time
 import os
 import math
 import numpy as np
+from config import (
+    CENTER_LEFT_LIMIT, CENTER_RIGHT_LIMIT,
+    TURN_LEFT_TRIGGER, TURN_RIGHT_TRIGGER,
+    STARTUP_STEPS_REQUIRED, STOP_TIMEOUT,
+    STEP_COOLDOWN,
+    MOMENTUM_GAIN, MOMENTUM_DECAY,
+    CALIB_FRAMES_NEEDED, CALIB_NOISE_MULTIPLIER,
+    CALIB_THRESHOLD_MIN, CALIB_THRESHOLD_MAX,
+    CALIB_PROGRESS_FRAMES,
+    SERVER_HOST, SERVER_PORT,
+    CAMERA_INDEX, LOOP_SLEEP,
+    BOUNCE_THRESHOLD as _DEFAULT_BOUNCE_THRESHOLD,
+)
 
 # --- 0. SERVER SETUP ---
 sio = socketio.Server(cors_allowed_origins='*')
-
-# Serve frontend file
-static_files = {
-    '/': '../frontend/index.html',
-    '/assets': '../frontend/assets',
-    '/game': '../frontend/game',
-}
-
-app = socketio.WSGIApp(sio, static_files=static_files)
-
-# ==========================================
-# ⚙️ LOGIC CONFIGURATION
-# ==========================================
-
-# 1. PLAYER LOCK (Center Zone for Calibration)
-CENTER_LEFT_LIMIT = 0.3
-CENTER_RIGHT_LIMIT = 0.7
-
-# 2. TURNING ZONES (Leaning)
-# If nose goes past these points, we trigger a turn
-TURN_LEFT_TRIGGER = 0.4
-TURN_RIGHT_TRIGGER = 0.6
-
-# 3. HYSTERESIS (Anti-Flicker)
-STARTUP_STEPS_REQUIRED = 3
-STOP_TIMEOUT = 0.5
-
-# 4. PHYSICS (Will be auto-calibrated)
-BOUNCE_THRESHOLD = 0.003  # Default fallback
-STEP_COOLDOWN = 0.3       # Rhythm speed limit
-MOMENTUM_DECAY = 0.92     # Coasting friction
-
-# ==========================================
 
 # --- AI SETUP ---
 BaseOptions = mp.tasks.BaseOptions
@@ -62,7 +42,16 @@ options = PoseLandmarkerOptions(
     running_mode=VisionRunningMode.VIDEO
 )
 detector = PoseLandmarker.create_from_options(options)
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(CAMERA_INDEX)
+
+# Serve frontend file
+static_files = {
+    '/': '../frontend/index.html',
+    '/assets': '../frontend/assets',
+    '/game': '../frontend/game',
+}
+
+app = socketio.WSGIApp(sio, static_files=static_files)
 
 # --- STATE VARIABLES ---
 system_state = "CALIBRATING" # CALIBRATING -> ACTIVE
@@ -75,6 +64,7 @@ calibration_noise_values = []
 consecutive_steps = 0
 is_walking_state = False
 center_lock_active = False
+BOUNCE_THRESHOLD = _DEFAULT_BOUNCE_THRESHOLD  # Will be overwritten after calibration
 
 print("✅ SERVER RUNNING... (Waiting for Dashboard)")
 
@@ -142,12 +132,15 @@ def game_loop():
                 if system_state == "CALIBRATING":
                     calibration_frames += 1
                     calibration_noise_values.append(delta)
-                    calib_progress = min(1.0, calibration_frames / 60)
+                    calib_progress = min(1.0, calibration_frames / CALIB_PROGRESS_FRAMES)
                     status_msg = "CALIBRATING"
                     
-                    if calibration_frames > 60:
+                    if calibration_frames > CALIB_FRAMES_NEEDED:
                         max_noise = max(calibration_noise_values)
-                        BOUNCE_THRESHOLD = max(0.0015, min(0.01, max_noise * 1.5))
+                        BOUNCE_THRESHOLD = max(
+                            CALIB_THRESHOLD_MIN,
+                            min(CALIB_THRESHOLD_MAX, max_noise * CALIB_NOISE_MULTIPLIER)
+                        )
                         system_state = "ACTIVE"
                         print(f"✅ CALIBRATED! Threshold: {BOUNCE_THRESHOLD:.5f}")
                 
@@ -157,7 +150,7 @@ def game_loop():
                     
                     # A. WALK LOGIC
                     if delta > BOUNCE_THRESHOLD:
-                        current_momentum += 0.15 
+                        current_momentum += MOMENTUM_GAIN
                         is_moving_down = shoulder_y > prev_y
                         if is_moving_down and (time.time() - last_step_time > STEP_COOLDOWN):
                             step_count += 1
@@ -208,8 +201,8 @@ def game_loop():
             'calibration': round(calib_progress, 2)
         })
         
-        eventlet.sleep(0.03)
+        eventlet.sleep(LOOP_SLEEP)
 
 if __name__ == '__main__':
     eventlet.spawn(game_loop)
-    eventlet.wsgi.server(eventlet.listen(('', 5000)), app)
+    eventlet.wsgi.server(eventlet.listen((SERVER_HOST, SERVER_PORT)), app)
