@@ -1,18 +1,18 @@
+import { CONFIG } from "../../game/config.js";
 export class QuizManager {
     constructor(gameManager, input) {
         this.gameManager = gameManager;
         this.input = input;
 
         this.active = false;
-        this.timer = 30;
+        this.timer = CONFIG.QUIZ_TIMER_START;
         this.interval = null;
         this.currentQuestion = null;
 
         // ── Arm-raise debounce: ignore arm spikes shorter than this cooldown ──
-        // This prevents walking arm-swings (~l_arm fluctuating briefly > 60)
-        // from instantly selecting an answer.
+        // This prevents walking arm-swings from instantly selecting an answer.
         this._armCooldown = 0;
-        this._ARM_COOLDOWN_FRAMES = 20; // ~0.33s at 60fps before an arm triggers answer
+        this._ARM_COOLDOWN_FRAMES = CONFIG.ARM_COOLDOWN_FRAMES; // Grace window frames
 
         // ── Question banks ──────────────────────────────────────────────────────
         this.easyQuestions = [
@@ -52,7 +52,7 @@ export class QuizManager {
     startQuiz() {
         if (this.active) return;
         this.active = true;
-        this.timer = 30;
+        this.timer = CONFIG.QUIZ_TIMER_START;
         this._armCooldown = this._ARM_COOLDOWN_FRAMES; // Start with a grace window
 
         // Random pool selection (simulates luck of the door chosen)
@@ -88,8 +88,8 @@ export class QuizManager {
             return;
         }
 
-        const leftRaised = this.input.l_arm > 60;
-        const rightRaised = this.input.r_arm > 60;
+        const leftRaised = this.input.l_arm > CONFIG.ARM_RAISE_THRESHOLD;
+        const rightRaised = this.input.r_arm > CONFIG.ARM_RAISE_THRESHOLD;
 
         if (leftRaised) {
             this._answer("A");

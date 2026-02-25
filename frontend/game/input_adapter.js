@@ -1,3 +1,5 @@
+import { CONFIG } from "./config.js";
+
 export class InputAdapter {
     constructor(onTelemetry) {
         this.momentum = 0;
@@ -11,8 +13,8 @@ export class InputAdapter {
         this._keyMomentum = 0;
         this._keyTurn = "CENTER";
 
-        console.log("InputAdapter: Attempting connection to http://localhost:5000...");
-        const socket = io("http://localhost:5000");
+        console.log(`InputAdapter: Attempting connection to ${CONFIG.SOCKET_URL}...`);
+        const socket = io(CONFIG.SOCKET_URL);
 
         socket.on("connect", () => {
             console.log("✅ InputAdapter: Connected to Server! ID:", socket.id);

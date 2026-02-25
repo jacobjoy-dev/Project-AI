@@ -1,5 +1,6 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js";
 import { ChunkFactory } from "./ChunkFactory.js";
+import { CONFIG } from "../config.js";
 
 export class LevelManager {
     constructor(scene) {
@@ -7,10 +8,10 @@ export class LevelManager {
         this.chunks = [];
         this.factory = new ChunkFactory();
 
-        // Config
-        this.chunkLength = 20;
-        this.renderDistance = 8;
-        this.SEQUENCE_LEN = 6; // Straights before each T-junction
+        // Config — driven by central CONFIG object
+        this.chunkLength = CONFIG.CHUNK_LENGTH;
+        this.renderDistance = CONFIG.RENDER_DISTANCE;
+        this.SEQUENCE_LEN = CONFIG.SEQUENCE_LEN;  // Straights before each T-junction
 
         // World container — scrolls/rotates while character stays fixed at origin
         this.worldContainer = new THREE.Group();

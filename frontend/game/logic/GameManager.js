@@ -1,3 +1,4 @@
+import { CONFIG } from "../../game/config.js";
 export class GameManager {
     constructor(character, levelManager, input) {
         this.character = character;
@@ -83,7 +84,7 @@ export class GameManager {
                     if (this.junctionCount > 0) {
                         // Not the first junction — skip the gesture gate entirely.
                         this.junctionDismissed = true;
-                    } else if (this.input.l_arm > 60 || this.input.r_arm > 60) {
+                    } else if (this.input.l_arm > CONFIG.ARM_RAISE_THRESHOLD || this.input.r_arm > CONFIG.ARM_RAISE_THRESHOLD) {
                         // First junction — wait for either arm to be raised.
                         this.junctionDismissed = true;
                     }

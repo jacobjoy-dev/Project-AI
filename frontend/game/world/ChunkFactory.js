@@ -1,10 +1,11 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js";
+import { CONFIG } from "../config.js";
 
 export class ChunkFactory {
     constructor() {
-        this.chunkLength = 20;
-        this.chunkWidth = 7;
-        this.wallHeight = 15;
+        this.chunkLength = CONFIG.CHUNK_LENGTH;
+        this.chunkWidth = CONFIG.CHUNK_WIDTH;
+        this.wallHeight = CONFIG.WALL_HEIGHT;
 
         // Shared Materials
         this.mats = {
