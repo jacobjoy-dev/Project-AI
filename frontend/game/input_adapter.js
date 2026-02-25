@@ -49,6 +49,9 @@ export class InputAdapter {
             if (key === "d" || key === "arrowright") { this._keyTurn = "RIGHT"; this.turn = "RIGHT"; }
             if (key === "q") this.l_wave = 1;
             if (key === "e") this.r_wave = 1;
+            // Z/X = dev arm-raise simulation (used to answer quiz: Z→Option A, X→Option B)
+            if (key === "z") this.l_arm = 75;
+            if (key === "x") this.r_arm = 75;
 
             if (onTelemetry) onTelemetry(this);
         });
@@ -60,6 +63,8 @@ export class InputAdapter {
             if (key === "d" || key === "arrowright") { this._keyTurn = "CENTER"; this.turn = "CENTER"; }
             if (key === "q") this.l_wave = 0;
             if (key === "e") this.r_wave = 0;
+            if (key === "z") this.l_arm = 0;
+            if (key === "x") this.r_arm = 0;
 
             if (onTelemetry) onTelemetry(this);
         });
