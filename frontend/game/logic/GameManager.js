@@ -4,40 +4,82 @@ export class GameManager {
         this.levelManager = levelManager;
         this.input = input;
 
-        this._lastTurn = "CENTER"; // Edge-detection for turn input
+        this._lastTurn = "CENTER";
 
-        // Set to true while the junction overlay is visible.
-        // Turns are suppressed during this time so that dismissing
-        // the overlay with a hand raise doesn't also fire handleTurn().
-        this.overlayOpen = false;
+        this.gameState = "RUNNING";
+        this.junctionDismissed = false;
+
+        // Tracks how many junctions have been reached.
+        // The FIRST junction (junctionCount === 0) requires a hand-raise gesture
+        // or the H key to dismiss the dialogue overlay before turning.
+        // All subsequent junctions (junctionCount >= 1) are auto-dismissed —
+        // no gesture or keybinding is needed; just turn.
+        this.junctionCount = 0;
+
+        this.lives = 3;
+        this.score = 0;
     }
 
     update() {
         const speed = this.character.animator.speed;
+        const turn = this.input.turn;
 
-        // Always try to scroll the world (LevelManager ignores this when blocked)
-        this.levelManager.update(speed);
+        switch (this.gameState) {
 
-        // Only check for turn gestures when NOT blocked by the overlay
-        if (this.levelManager.isBlocked && !this.overlayOpen) {
-            this._checkTurnInput();
-        } else {
-            // Reset edge-detector when not processing turns
-            this._lastTurn = "CENTER";
+            case "RUNNING": {
+                this.levelManager.update(speed);
+                if (this.levelManager.isBlocked) {
+                    this.gameState = "AT_JUNCTION";
+                }
+                break;
+            }
+
+            case "AT_JUNCTION": {
+                // Junction 1 (junctionCount === 0): require a hand-raise (gesture or H key)
+                // to dismiss the dialogue overlay before the player can turn.
+                // Junction 2+ (junctionCount >= 1): auto-dismiss — just turn directly.
+                if (!this.junctionDismissed) {
+                    if (this.junctionCount > 0) {
+                        // Not the first junction — skip the gesture gate entirely.
+                        this.junctionDismissed = true;
+                    } else if (this.input.l_arm > 60 || this.input.r_arm > 60) {
+                        // First junction — wait for either arm to be raised.
+                        this.junctionDismissed = true;
+                    }
+                } else {
+                    if (turn !== "CENTER" && turn !== this._lastTurn) {
+                        this.levelManager.handleTurn(turn, this.character.group);
+                        this.junctionDismissed = false;
+                        this.junctionCount++;           // Increment after each successful turn
+                        this._lastTurn = "CENTER";      // Reset so same direction works next junction
+                        this.gameState = "RUNNING";
+                    }
+                }
+                this._lastTurn = turn;
+                break;
+            }
+
+            case "AT_DOOR": {
+                break;
+            }
+
+            case "DEAD": {
+                break;
+            }
         }
     }
 
-    // ─── PRIVATE ───────────────────────────────────────────────────────────────
+    loseLife() {
+        this.lives -= 1;
+        console.log("💔 Life lost! Remaining lives:", this.lives);
 
-    _checkTurnInput() {
-        const turn = this.input.turn; // "LEFT" | "RIGHT" | "CENTER"
-
-        // Fire only on a fresh LEFT or RIGHT gesture (edge detection)
-        if ((turn === "LEFT" || turn === "RIGHT") && turn !== this._lastTurn) {
-            console.log("🔄 Turn triggered:", turn);
-            this.levelManager.handleTurn(turn, this.character.group);
+        if (this.lives < 0) {
+            this.gameState = "DEAD";
+            console.log("💀 Game Over — no lives remaining.");
+        } else {
+            this.character.group.rotation.set(0, 0, 0);
+            this.levelManager.resetToStart();
+            this.gameState = "RUNNING";
         }
-
-        this._lastTurn = turn;
     }
 }
