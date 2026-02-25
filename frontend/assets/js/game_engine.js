@@ -3,7 +3,8 @@ import { InputAdapter } from "../../game/input_adapter.js";
 import { CharacterController } from "../../game/character_control.js";
 import { CameraController } from "../../game/camera_controller.js";
 import { LevelManager } from "../../game/world/LevelManager.js";
-import { GameManager } from "../../game/logic/GameManager.js"; // Import GameManager
+import { GameManager } from "../../game/logic/GameManager.js";
+import { QuizManager } from "../../game/logic/QuizManager.js";
 
 // Scene
 const scene = new THREE.Scene();
@@ -80,6 +81,9 @@ const character = new CharacterController(scene, input);
 // --- GAME MANAGER ---
 const gameManager = new GameManager(character, levelManager, input);
 
+// --- QUIZ MANAGER ---
+const quizManager = new QuizManager(gameManager, input);
+
 // Camera
 const camController = new CameraController(camera, character);
 
@@ -117,28 +121,60 @@ function hideGameOver() {
     gameOverOverlay.classList.add("hidden");
 }
 
-// ─── Lives HUD ────────────────────────────────────────────────────────────────
+// ─── Victory Overlay ──────────────────────────────────────────────────────────
+const victoryOverlay = document.getElementById("victory-overlay");
+const finalTimeDisplay = document.getElementById("final-time-display");
+let victoryVisible = false;
+
+function showVictory() {
+    if (victoryVisible) return;
+    victoryVisible = true;
+    finalTimeDisplay.textContent = gameManager.formatTime(gameManager.endTime - gameManager.startTime);
+    victoryOverlay.classList.remove("hidden");
+}
+
+function hideVictory() {
+    if (!victoryVisible) return;
+    victoryVisible = false;
+    victoryOverlay.classList.add("hidden");
+}
+
+// ─── Lives / Level / Time HUD ─────────────────────────────────────────────────
 const livesDisplay = document.getElementById("lives-display");
+const levelDisplay = document.getElementById("level-display");
+const timeDisplay = document.getElementById("time-display");
 
 function updateLivesHUD() {
     const lives = Math.max(gameManager.lives, 0);
     const hearts = ["♥ ♥ ♥", "♥ ♥ ♡", "♥ ♡ ♡", "♡ ♡ ♡"];
-    // Map 3→0 lives to heart strings. Clamp to 0.
     const idx = Math.min(3 - lives, 3);
     livesDisplay.textContent = hearts[idx];
     livesDisplay.className = "lives-display" + (lives === 0 ? " lost" : "");
 }
 
+function updateProgressHUD() {
+    const lvl = Math.min(gameManager.level, 3);
+    levelDisplay.textContent = lvl + " / 3";
+    timeDisplay.textContent = gameManager.globalTime;
+}
+
 // ─── Restart ─────────────────────────────────────────────────────────────────
 function restart() {
     gameManager.lives = 3;
+    gameManager.score = 0;
+    gameManager.level = 1;
+    gameManager.startTime = Date.now();
+    gameManager.endTime = null;
     gameManager.gameState = "RUNNING";
     gameManager._lastTurn = "CENTER";
-    gameManager.junctionCount = 0;      // Reset so first-junction gesture is required again
+    gameManager.junctionCount = 0;
     gameManager.junctionDismissed = false;
+    overlayShownOnce = false;
     character.group.rotation.set(0, 0, 0);
     levelManager.resetToStart();
+    if (quizManager.active) quizManager._clear();
     hideGameOver();
+    hideVictory();
 }
 
 // ─── Dev / Input Shortcuts ────────────────────────────────────────────────────
@@ -158,9 +194,9 @@ window.addEventListener("keydown", (e) => {
         return;
     }
 
-    // Q: context-sensitive — restart on DEAD, lose a life otherwise (dev test)
+    // Q: restart on DEAD or GAME_WON; lose a life otherwise (dev test)
     if (key === "q") {
-        if (gameManager.gameState === "DEAD") restart();
+        if (gameManager.gameState === "DEAD" || gameManager.gameState === "GAME_WON") restart();
         else gameManager.loseLife();
     }
 });
@@ -171,6 +207,7 @@ function animate() {
 
     gameManager.update();
     character.update();
+    quizManager.update();
 
     if (gameManager.gameState === "AT_JUNCTION" && !gameManager.junctionDismissed) {
         showJunctionOverlay();
@@ -178,12 +215,22 @@ function animate() {
         hideJunctionOverlay();
     }
 
+    // Start quiz when entering AT_DOOR (only once per door)
+    if (gameManager.gameState === "AT_DOOR" && !quizManager.active) {
+        quizManager.startQuiz();
+    }
+
     if (gameManager.gameState === "DEAD") {
         showGameOver();
     }
 
-    // Lives HUD — update every frame (cheap DOM write only when needed via textContent)
+    if (gameManager.gameState === "GAME_WON") {
+        showVictory();
+    }
+
+    // HUD updates every frame
     updateLivesHUD();
+    updateProgressHUD();
 
     // Camera
     if (levelManager.justTurned) {
