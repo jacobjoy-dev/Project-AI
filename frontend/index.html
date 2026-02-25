@@ -44,6 +44,11 @@
             <div>Steps: <span id="step-count" style="color: #fff">0</span></div>
             <div>Turn: <span id="turn-signal" style="color: #fff">CENTER</span></div>
         </div>
+
+        <div class="stat-row" style="margin-top: 14px;">
+            <span class="stat-label">Lives</span>
+            <span id="lives-display" class="lives-display">♥ ♥ ♥</span>
+        </div>
     </div>
 
     <!-- ═══ Junction Notification Overlay ═══ -->
@@ -82,6 +87,32 @@
 
     </div>
 
+    <!-- ═══ Game Over Overlay ═══ -->
+    <div id="game-over-overlay" class="junction-overlay hidden">
+
+        <span class="corner tl"></span>
+        <span class="corner tr"></span>
+        <span class="corner bl"></span>
+        <span class="corner br"></span>
+
+        <p class="junction-label" style="color: #ff2244;">/ / &nbsp; S Y S T E M &nbsp; F A I L U R E &nbsp; / /</p>
+
+        <h2 class="junction-title" style="color: #ff2244; letter-spacing: 16px;">GAME OVER</h2>
+
+        <div class="junction-divider"
+            style="background: linear-gradient(90deg, transparent, #ff2244, #ff2244, transparent); box-shadow: 0 0 10px #ff2244;">
+        </div>
+
+        <p class="junction-sub" style="color: #aaa; font-size: 1.1rem; letter-spacing: 2px;">
+            All systems terminated.<br>No lives remaining.
+        </p>
+
+        <div class="junction-dismiss"
+            style="border-color: rgba(255,34,68,0.25); background: rgba(255,34,68,0.05); color: #666;">
+            Press &nbsp;<span style="color:#ff2244; font-weight:700; font-family:'Orbitron',monospace;">Q</span>&nbsp;
+            to restart
+        </div>
+    </div>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script type="module" src="./assets/js/game_engine.js"></script>
 </body>
