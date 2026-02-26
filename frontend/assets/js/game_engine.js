@@ -44,42 +44,97 @@ const uiIds = {
     indicator: document.getElementById("status-indicator"),
     momentumVal: document.getElementById("momentum-val"),
     momentumBar: document.getElementById("momentum-bar"),
-    calibVal: document.getElementById("calib-val"),
-    calibBar: document.getElementById("calib-bar"),
     steps: document.getElementById("step-count"),
     turn: document.getElementById("turn-signal"),
 };
 
+const calibOverlay = document.getElementById("calib-overlay");
+const calibHeading = document.getElementById("calib-heading");
+const calibPhaseEl = document.getElementById("calib-phase-section");
+const calibProgFill = document.getElementById("calib-prog-fill");
+const calibPctEl = document.getElementById("calib-pct");
+const calibCountSec = document.getElementById("calib-countdown-section");
+const calibNumberEl = document.getElementById("calib-number");
+
+let _wasCalibrating = true;
+let _countdownStarted = false;
+
+function _startCountdown() {
+    calibPhaseEl.classList.add("hidden");
+    calibHeading.textContent = "GET READY";
+    calibCountSec.classList.remove("hidden");
+
+    const steps = ["3", "2", "1", "GO!"];
+    let i = 0;
+
+    function tick() {
+        calibNumberEl.textContent = steps[i];
+        calibNumberEl.classList.remove("pop");
+        void calibNumberEl.offsetWidth;
+        calibNumberEl.classList.add("pop");
+
+        if (steps[i] === "GO!") {
+            calibNumberEl.style.color = "#00ff88";
+            calibNumberEl.style.textShadow = "0 0 40px rgba(0,255,136,0.9)";
+            setTimeout(() => {
+                calibOverlay.classList.add("calib-fade-out");
+                setTimeout(() => calibOverlay.classList.add("hidden"), 400);
+                gameManager.startTime = Date.now();
+                gameManager.timerActive = true;
+            }, 700);
+            return;
+        }
+        i++;
+        setTimeout(tick, 900);
+    }
+    tick();
+}
+
 // Input
 const input = new InputAdapter((data) => {
-    // 1. Status Text & Indicator
     uiIds.status.textContent = data.status;
-    uiIds.indicator.className = ""; // reset
+    uiIds.indicator.className = "";
 
     if (data.status === "CALIBRATING") uiIds.indicator.classList.add("calibrating");
     else if (data.status === "NO PLAYER") uiIds.indicator.classList.add("disconnected");
     else uiIds.indicator.classList.add("active");
 
-    // 2. Momentum
     const momPct = Math.min(100, Math.round(data.momentum * 100));
     uiIds.momentumVal.textContent = momPct + "%";
     uiIds.momentumBar.style.width = momPct + "%";
 
-    // 3. Calibration
-    const calibPct = Math.min(100, Math.round(data.calibration * 100));
-    uiIds.calibVal.textContent = calibPct + "%";
-    uiIds.calibBar.style.width = calibPct + "%";
-
-    // 4. Stats
     uiIds.steps.textContent = data.steps;
     uiIds.turn.textContent = data.turn;
+
+    const calibPct = Math.min(100, Math.round(data.calibration * 100));
+    calibProgFill.style.width = calibPct + "%";
+    calibPctEl.textContent = calibPct + "%";
+
+    if (_wasCalibrating && data.status !== "CALIBRATING" && data.status !== "NO PLAYER" && !_countdownStarted) {
+        _countdownStarted = true;
+        _startCountdown();
+    }
+    if (data.status === "CALIBRATING") _wasCalibrating = true;
 });
 
 // Character
 const character = new CharacterController(scene, input);
 
+// ─── Flash Feedback ────────────────────────────────────────────────────────────
+const _flashEl = document.getElementById("flash-overlay");
+const _flashText = document.getElementById("flash-text");
+let _flashTimeout = null;
+
+function triggerFlash(type, message) {
+    _flashEl.classList.remove("hidden", "flash-red", "flash-cyan");
+    _flashEl.classList.add("flash-" + type);
+    _flashText.textContent = message;
+    clearTimeout(_flashTimeout);
+    _flashTimeout = setTimeout(() => _flashEl.classList.add("hidden"), 1500);
+}
+
 // --- GAME MANAGER ---
-const gameManager = new GameManager(character, levelManager, input);
+const gameManager = new GameManager(character, levelManager, input, triggerFlash);
 
 // --- QUIZ MANAGER ---
 const quizManager = new QuizManager(gameManager, input);
@@ -160,11 +215,17 @@ function updateProgressHUD() {
 
 // ─── Restart ─────────────────────────────────────────────────────────────────
 function restart() {
+    const wasGameWon = gameManager.gameState === "GAME_WON";
+
     gameManager.lives = 3;
-    gameManager.score = 0;
-    gameManager.level = 1;
-    gameManager.startTime = Date.now();
     gameManager.endTime = null;
+    gameManager.timerActive = false;
+
+    if (wasGameWon) {
+        gameManager.score = 0;
+        gameManager.level = 1;
+    }
+
     gameManager.gameState = "RUNNING";
     gameManager._lastTurn = "CENTER";
     gameManager.junctionCount = 0;
@@ -175,6 +236,14 @@ function restart() {
     if (quizManager.active) quizManager._clear();
     hideGameOver();
     hideVictory();
+
+    calibOverlay.classList.remove("hidden", "calib-fade-out");
+    calibPhaseEl.classList.add("hidden");
+    calibCountSec.classList.remove("hidden");
+    calibHeading.textContent = "GET READY";
+    calibNumberEl.style.color = "#00ffff";
+    calibNumberEl.style.textShadow = "";
+    _startCountdown();
 }
 
 // ─── Dev / Input Shortcuts ────────────────────────────────────────────────────
@@ -215,7 +284,6 @@ function animate() {
         hideJunctionOverlay();
     }
 
-    // Start quiz when entering AT_DOOR (only once per door)
     if (gameManager.gameState === "AT_DOOR" && !quizManager.active) {
         quizManager.startQuiz();
     }
@@ -228,12 +296,14 @@ function animate() {
         showVictory();
     }
 
-    // HUD updates every frame
     updateLivesHUD();
     updateProgressHUD();
 
-    // Camera
-    camController.update();
+    if (levelManager.justTurned) {
+        camController.snap();
+    } else {
+        camController.update();
+    }
 
     renderer.render(scene, camera);
 }
