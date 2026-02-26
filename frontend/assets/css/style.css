@@ -473,3 +473,181 @@ h1 {
         0 0 90px rgba(0, 255, 136, 0.2) !important;
     letter-spacing: 20px !important;
 }
+
+.flash-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    opacity: 1;
+}
+
+.flash-overlay.hidden {
+    opacity: 0;
+    transform: scale(1.05);
+}
+
+.flash-text {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.8rem, 5vw, 3.5rem);
+    font-weight: 900;
+    letter-spacing: 8px;
+    text-align: center;
+    margin: 0;
+}
+
+.flash-red {
+    box-shadow: inset 0 0 150px rgba(255, 34, 68, 0.4);
+}
+
+.flash-red #flash-text {
+    color: #ff2244;
+    text-shadow: 0 0 20px rgba(255, 34, 68, 0.9);
+}
+
+.flash-cyan {
+    box-shadow: inset 0 0 150px rgba(0, 255, 255, 0.3);
+}
+
+.flash-cyan #flash-text {
+    color: #00ffff;
+    text-shadow: 0 0 20px rgba(0, 255, 255, 0.9);
+}
+
+/* ═══════════════════════════════════════════
+   CALIBRATION OVERLAY
+═══════════════════════════════════════════ */
+
+#calib-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.96);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    transition: opacity 0.4s ease;
+    opacity: 1;
+}
+
+#calib-overlay.calib-fade-out {
+    opacity: 0;
+}
+
+.calib-game-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 8px;
+    color: #444;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.calib-heading {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2rem, 6vw, 4rem);
+    font-weight: 900;
+    letter-spacing: 16px;
+    color: #00ffff;
+    text-shadow: 0 0 20px rgba(0, 255, 255, 0.8), 0 0 60px rgba(0, 255, 255, 0.3);
+    margin: 0;
+    animation: calib-pulse 2s ease-in-out infinite;
+}
+
+@keyframes calib-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.calib-hint {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 3px;
+    color: #555;
+    text-transform: uppercase;
+    margin: 0 0 12px;
+    text-align: center;
+}
+
+.calib-bar-wrap {
+    width: min(420px, 70vw);
+    height: 6px;
+    background: rgba(0, 255, 255, 0.1);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 0 auto;
+}
+
+#calib-prog-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #00ffff, #00ff88);
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.7);
+    transition: width 0.3s ease;
+    border-radius: 3px;
+}
+
+.calib-pct {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    color: #00ffff;
+    margin: 8px 0 0;
+    text-align: center;
+    letter-spacing: 3px;
+}
+
+#calib-countdown-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calib-number {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(6rem, 22vw, 14rem);
+    font-weight: 900;
+    color: #00ffff;
+    text-shadow: 0 0 40px rgba(0, 255, 255, 0.9), 0 0 100px rgba(0, 255, 255, 0.4);
+    line-height: 1;
+    opacity: 0;
+}
+
+.calib-number.pop {
+    animation: calib-pop 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes calib-pop {
+    0% {
+        transform: scale(1.6);
+        opacity: 0;
+    }
+
+    30% {
+        transform: scale(0.95);
+        opacity: 1;
+    }
+
+    80% {
+        transform: scale(1.0);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1.0);
+        opacity: 0.2;
+    }
+}
