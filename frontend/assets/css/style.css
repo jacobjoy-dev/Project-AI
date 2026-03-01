@@ -5,91 +5,200 @@ body {
     color: white;
 }
 
-#info {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    width: 300px;
-    padding: 20px;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(10px);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    user-select: none;
+/* ═══════════════════════════════════════════
+   TURN INDICATORS (EDGE GRADIENTS)
+═══════════════════════════════════════════ */
+.turn-indicator {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 15vw;
+    opacity: 0;
+    /* JS will change this to fade in */
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 100;
 }
 
-h1 {
-    font-size: 1.2rem;
-    margin: 0 0 15px 0;
+.turn-indicator-left {
+    left: 0;
+    background: linear-gradient(to right, rgba(0, 255, 255, 0.35) 0%, transparent 100%);
+}
+
+.turn-indicator-right {
+    right: 0;
+    background: linear-gradient(to left, rgba(0, 255, 255, 0.35) 0%, transparent 100%);
+}
+
+/* ═══════════════════════════════════════════
+   HUD LAYOUT (SCI-FI VISOR)
+═══════════════════════════════════════════ */
+#hud-container {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    /* Let clicks pass through */
+    z-index: 200;
+}
+
+/* ── Center Top Timer ── */
+.hud-timer {
+    position: absolute;
+    top: 2.5vh;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700;
+    color: #00ffff;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.9), 0 0 20px rgba(0, 255, 255, 0.5);
+    letter-spacing: 4px;
+}
+
+/* ── Glassmorphic Panels ── */
+.hud-panel {
+    position: absolute;
+    top: 3vh;
+    padding: 16px 24px;
+    background: rgba(10, 20, 30, 0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 255, 255, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(0, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.panel-tl {
+    left: 2vw;
+    border-left: 3px solid rgba(0, 255, 255, 0.7);
+}
+
+.panel-tr {
+    right: 2vw;
+    border-right: 3px solid rgba(0, 255, 255, 0.7);
+    align-items: flex-end;
+}
+
+/* ── Panel Contents ── */
+.status-wrap,
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.15rem;
     font-weight: 600;
     color: #e0e0e0;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    padding-bottom: 10px;
 }
 
-.stat-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    font-size: 0.9rem;
+.stat-icon {
+    width: 22px;
+    height: 22px;
+    color: #00ffff;
+    filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.5));
 }
 
-.stat-label {
-    color: #aaa;
-}
-
-.stat-value {
-    font-weight: bold;
-    color: #fff;
-}
-
-/* Status Indicator */
 #status-indicator {
     display: inline-block;
-    width: 10px;
-    height: 10px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
-    margin-right: 8px;
     background-color: #555;
+    box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6);
 }
 
 #status-indicator.active {
-    background-color: #4ade80;
-    box-shadow: 0 0 8px #4ade80;
+    background-color: #00ff88;
+    box-shadow: 0 0 12px #00ff88, inset 0 0 4px rgba(255, 255, 255, 0.8);
 }
 
 #status-indicator.calibrating {
     background-color: #fbbf24;
     animation: pulse 1.5s infinite;
+    box-shadow: 0 0 12px #fbbf24;
 }
 
 #status-indicator.disconnected {
-    background-color: #ef4444;
+    background-color: #ff2244;
+    box-shadow: 0 0 12px #ff2244;
 }
 
-/* Progress Bars */
-.progress-container {
+/* ── Energy Core Lives ── */
+.energy-core {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.core-seg {
+    width: 32px;
+    height: 12px;
+    background: #00ff88;
+    box-shadow: 0 0 10px #00ff88;
+    border-radius: 2px;
+    transform: skewX(-25deg);
+    transition: all 0.3s ease;
+}
+
+.core-seg.lost {
+    background: #2a2a2a;
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.8);
+    opacity: 0.6;
+}
+
+/* ── Bottom Speedometer ── */
+.speedometer-wrap {
+    position: absolute;
+    bottom: 2vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 280px;
+    height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.speed-svg {
+    position: absolute;
+    bottom: 0;
     width: 100%;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-    margin-top: 5px;
-    overflow: hidden;
-}
-
-.progress-bar {
     height: 100%;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
-    width: 0%;
-    transition: width 0.1s linear;
+    overflow: visible;
 }
 
-#calib-bar {
-    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+.arc-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 14;
+    stroke-linecap: round;
+}
+
+.arc-fg {
+    fill: none;
+    stroke: url(#speedGrad);
+    stroke-width: 14;
+    stroke-linecap: round;
+    /* We will use JS to determine precise arc length, but start hidden */
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 0.1s linear;
+    filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.7));
+}
+
+.momentum-text {
+    position: relative;
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 12px rgba(0, 255, 255, 0.6);
+    margin-bottom: 12px;
 }
 
 @keyframes pulse {
