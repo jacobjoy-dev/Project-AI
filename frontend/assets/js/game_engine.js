@@ -43,9 +43,10 @@ const uiIds = {
     status: document.getElementById("status"),
     indicator: document.getElementById("status-indicator"),
     momentumVal: document.getElementById("momentum-val"),
-    momentumBar: document.getElementById("momentum-bar"),
-    steps: document.getElementById("step-count"),
-    turn: document.getElementById("turn-signal"),
+    momentumArc: document.getElementById("momentum-arc"),
+    score: document.getElementById("score-display"),
+    turnLeft: document.getElementById("turn-left"),
+    turnRight: document.getElementById("turn-right"),
 };
 
 const calibOverlay = document.getElementById("calib-overlay");
@@ -101,10 +102,28 @@ const input = new InputAdapter((data) => {
 
     const momPct = Math.min(100, Math.round(data.momentum * 100));
     uiIds.momentumVal.textContent = momPct + "%";
-    uiIds.momentumBar.style.width = momPct + "%";
 
-    uiIds.steps.textContent = data.steps;
-    uiIds.turn.textContent = data.turn;
+    // Update Momentum Arc
+    if (!uiIds.arcLength && uiIds.momentumArc) {
+        uiIds.arcLength = uiIds.momentumArc.getTotalLength();
+        uiIds.momentumArc.style.strokeDasharray = uiIds.arcLength;
+    }
+    if (uiIds.momentumArc && uiIds.arcLength) {
+        const dashOffset = uiIds.arcLength - ((momPct / 100) * uiIds.arcLength);
+        uiIds.momentumArc.style.strokeDashoffset = dashOffset;
+    }
+
+    // Turn Indicators Edge Fades
+    if (data.turn === "LEFT" && uiIds.turnLeft && uiIds.turnRight) {
+        uiIds.turnLeft.style.opacity = 0.8;
+        uiIds.turnRight.style.opacity = 0;
+    } else if (data.turn === "RIGHT" && uiIds.turnLeft && uiIds.turnRight) {
+        uiIds.turnRight.style.opacity = 0.8;
+        uiIds.turnLeft.style.opacity = 0;
+    } else if (uiIds.turnLeft && uiIds.turnRight) {
+        uiIds.turnLeft.style.opacity = 0;
+        uiIds.turnRight.style.opacity = 0;
+    }
 
     const calibPct = Math.min(100, Math.round(data.calibration * 100));
     calibProgFill.style.width = calibPct + "%";
@@ -195,22 +214,30 @@ function hideVictory() {
 }
 
 // ─── Lives / Level / Time HUD ─────────────────────────────────────────────────
-const livesDisplay = document.getElementById("lives-display");
 const levelDisplay = document.getElementById("level-display");
 const timeDisplay = document.getElementById("time-display");
 
 function updateLivesHUD() {
     const lives = Math.max(gameManager.lives, 0);
-    const hearts = ["♥ ♥ ♥", "♥ ♥ ♡", "♥ ♡ ♡", "♡ ♡ ♡"];
-    const idx = Math.min(3 - lives, 3);
-    livesDisplay.textContent = hearts[idx];
-    livesDisplay.className = "lives-display" + (lives === 0 ? " lost" : "");
+    for (let i = 1; i <= 3; i++) {
+        const seg = document.getElementById("life-" + i);
+        if (seg) {
+            if (i <= lives) {
+                seg.classList.remove("lost");
+            } else {
+                seg.classList.add("lost");
+            }
+        }
+    }
 }
 
 function updateProgressHUD() {
     const lvl = Math.min(gameManager.level, 3);
     levelDisplay.textContent = lvl + " / 3";
     timeDisplay.textContent = gameManager.globalTime;
+    if (uiIds.score) {
+        uiIds.score.textContent = gameManager.score;
+    }
 }
 
 // ─── Restart ─────────────────────────────────────────────────────────────────
