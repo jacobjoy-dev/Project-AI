@@ -44,13 +44,12 @@ sio = socketio.Server(cors_allowed_origins='*')
 
 # --- LLM SETUP (Gemini REST API) ---
 # Uses direct HTTP — no SDK version issues.
-# v1beta endpoint has gemini-1.5-flash on the free tier.
+# gemini-2.5-flash on the free tier via v1beta.
 _GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
 _GEMINI_URL = (
     "https://generativelanguage.googleapis.com"
     "/v1beta/models/gemini-2.5-flash:generateContent"
-    "?key={key}"
-)
+)  # API key passed via header, not URL, to keep it out of logs
 if _GEMINI_API_KEY:
     print("✅ Gemini REST API ready (gemini-2.5-flash / v1beta).")
 else:
@@ -107,6 +106,7 @@ def connect(sid, environ):
 @sio.event
 def disconnect(sid):
     print(f"❌ CLIENT DISCONNECTED: {sid}")
+    _player_registry.pop(sid, None)
 
 # --- IN-MEMORY PLAYER REGISTRY ---
 _player_registry = {}  # { sid: { name, class, topic } }
@@ -147,17 +147,21 @@ def _generate_questions(topic: str) -> list:
         '- Output raw JSON only.'
     )
 
-    url = _GEMINI_URL.format(key=_GEMINI_API_KEY)
+    url = _GEMINI_URL
+    headers = {"x-goog-api-key": _GEMINI_API_KEY}
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0.7}
     }
 
-    resp = requests.post(url, json=payload, timeout=30)
+    resp = requests.post(url, json=payload, headers=headers, timeout=30)
     resp.raise_for_status()  # raises HTTPError on 4xx/5xx
 
     data = resp.json()
-    raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+    try:
+        raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except (KeyError, IndexError, TypeError) as e:
+        raise ValueError(f"Unexpected API response structure: {e}") from e
 
     # Strip markdown fences if the model adds them despite instructions
     raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.IGNORECASE)
@@ -200,7 +204,7 @@ def request_questions(sid, data):
         sio.emit('questions_ready', questions, to=sid)
     except Exception as e:
         print(f"[LLM] [{sid}] ❌ Generation failed: {e}")
-        sio.emit('questions_error', {'message': str(e)}, to=sid)
+        sio.emit('questions_error', {'message': 'Failed to generate questions. Please try again.'}, to=sid)
 
 # --- IMPORT MOTION LOGIC ---
 from motion_logic.gesture_detection import calculate_arm_angle, calculate_wiper_angle

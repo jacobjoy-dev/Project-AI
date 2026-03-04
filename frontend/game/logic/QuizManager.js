@@ -72,12 +72,14 @@ export class QuizManager {
 
     // ── Draw next question without repeat ─────────────────────────────────────
     _drawQuestion() {
-        if (this._deck.length === 0) return null;
+        if (this._deck.length === 0) return null;  // banks are empty
         if (this._deckIndex >= this._deck.length) {
             // All questions seen — reshuffle for the next round
             this._buildDeck();
+            // Guard: rebuilding could still result in an empty deck
+            if (this._deck.length === 0) return null;
         }
-        return this._deck[this._deckIndex++];
+        return this._deck[this._deckIndex++] ?? null;  // never return undefined
     }
 
     // ── Public: called once when AT_DOOR state is detected ────────────────────
@@ -89,7 +91,12 @@ export class QuizManager {
 
         // Draw the next question from the no-repeat deck
         this.currentQuestion = this._drawQuestion();
-        if (!this.currentQuestion) return;  // safety: empty bank
+        if (this.currentQuestion === null) {
+            // No questions available — reset active so the door can retrigger
+            this.active = false;
+            console.warn('[QuizManager] No questions in deck — skipping quiz.');
+            return;
+        }
 
         // Populate UI
         this._questEl.textContent = this.currentQuestion.text;

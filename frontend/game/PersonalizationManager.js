@@ -58,7 +58,7 @@ export class PersonalizationManager {
         const topic = this._topicInput.value.trim();
 
         if (!name || !classId || !topic) {
-            this._showError('All fields are required.');
+            this._onError('All fields are required.');
             return;
         }
 

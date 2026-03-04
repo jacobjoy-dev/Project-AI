@@ -1014,3 +1014,25 @@ body {
         opacity: 0.3;
     }
 }
+
+/* ── Keyboard focus accessibility ────────────────────────────────────────────
+   Uses :focus-visible so mouse clicks don't show the ring,
+   only keyboard navigation does.                                             */
+
+.perso-input:focus-visible {
+    border-bottom-color: #00ffff;
+    background: rgba(0, 255, 255, 0.06);
+    outline: 2px solid rgba(0, 255, 255, 0.7);
+    outline-offset: 2px;
+    box-shadow:
+        0 2px 12px rgba(0, 255, 255, 0.2),
+        0 0 0 4px rgba(0, 255, 255, 0.08);
+}
+
+.perso-btn:focus-visible {
+    outline: 2px solid rgba(0, 255, 255, 0.9);
+    outline-offset: 3px;
+    box-shadow:
+        0 0 35px rgba(0, 255, 255, 0.4),
+        0 0 0 5px rgba(0, 255, 255, 0.08);
+}

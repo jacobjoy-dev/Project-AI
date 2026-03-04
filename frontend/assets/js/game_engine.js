@@ -61,9 +61,9 @@ const calibNumberEl = document.getElementById("calib-number");
 
 let _wasCalibrating = true;
 let _countdownStarted = false;
-// Guard: block telemetry-driven countdown until personalization overlay is dismissed.
-// Without this, the server's CALIBRATING→ACTIVE transition fires _startCountdown()
-// through InputAdapter while the form is still open — causing a double countdown.
+// Set to true once telemetry confirms the server has left CALIBRATING state.
+let _calibrationComplete = false;
+// Blocks telemetry-driven countdown until personalization overlay is dismissed.
 let _personalizationDone = false;
 
 function _startCountdown() {
@@ -135,9 +135,12 @@ const input = new InputAdapter((data) => {
     calibProgFill.style.width = calibPct + "%";
     calibPctEl.textContent = calibPct + "%";
 
-    if (_personalizationDone && _wasCalibrating && data.status !== "CALIBRATING" && data.status !== "NO PLAYER" && !_countdownStarted) {
-        _countdownStarted = true;
-        _startCountdown();
+    if (_wasCalibrating && data.status !== "CALIBRATING" && data.status !== "NO PLAYER") {
+        _calibrationComplete = true;  // mark that server is ready
+        if (_personalizationDone && !_countdownStarted) {
+            _countdownStarted = true;
+            _startCountdown();
+        }
     }
     if (data.status === "CALIBRATING") _wasCalibrating = true;
 });
@@ -172,11 +175,15 @@ const personalizationManager = new PersonalizationManager(
     _sharedSocket,
     quizManager,
     () => {
-        // onComplete: personalization done → unlock telemetry countdown
-        // then immediately check if calibration already finished while we were waiting.
+        // onComplete: personalization done.
+        // If calibration already finished while the player was filling the form,
+        // start the countdown immediately. Otherwise, unlock the telemetry path
+        // and let it fire once the server transitions to ACTIVE.
         _personalizationDone = true;
-        _countdownStarted = true; // prevent any duplicate from telemetry callback
-        _startCountdown();
+        if (_calibrationComplete && !_countdownStarted) {
+            _countdownStarted = true;
+            _startCountdown();
+        }
         animate();
     }
 );
