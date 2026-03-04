@@ -5,6 +5,8 @@ import { CameraController } from "../../game/camera_controller.js";
 import { LevelManager } from "../../game/world/LevelManager.js";
 import { GameManager } from "../../game/logic/GameManager.js";
 import { QuizManager } from "../../game/logic/QuizManager.js";
+import { PersonalizationManager } from "../../game/PersonalizationManager.js";
+import { CONFIG } from "../../game/config.js";
 
 // Scene
 const scene = new THREE.Scene();
@@ -59,6 +61,10 @@ const calibNumberEl = document.getElementById("calib-number");
 
 let _wasCalibrating = true;
 let _countdownStarted = false;
+// Guard: block telemetry-driven countdown until personalization overlay is dismissed.
+// Without this, the server's CALIBRATING→ACTIVE transition fires _startCountdown()
+// through InputAdapter while the form is still open — causing a double countdown.
+let _personalizationDone = false;
 
 function _startCountdown() {
     calibPhaseEl.classList.add("hidden");
@@ -129,7 +135,7 @@ const input = new InputAdapter((data) => {
     calibProgFill.style.width = calibPct + "%";
     calibPctEl.textContent = calibPct + "%";
 
-    if (_wasCalibrating && data.status !== "CALIBRATING" && data.status !== "NO PLAYER" && !_countdownStarted) {
+    if (_personalizationDone && _wasCalibrating && data.status !== "CALIBRATING" && data.status !== "NO PLAYER" && !_countdownStarted) {
         _countdownStarted = true;
         _startCountdown();
     }
@@ -157,6 +163,24 @@ const gameManager = new GameManager(character, levelManager, input, triggerFlash
 
 // --- QUIZ MANAGER ---
 const quizManager = new QuizManager(gameManager, input);
+
+// --- PERSONALIZATION MANAGER ---
+// A shared socket created here (separate from InputAdapter's internal one)
+// so PersonalizationManager can emit/listen for personalization events.
+const _sharedSocket = io(CONFIG.SOCKET_URL);
+const personalizationManager = new PersonalizationManager(
+    _sharedSocket,
+    quizManager,
+    () => {
+        // onComplete: personalization done → unlock telemetry countdown
+        // then immediately check if calibration already finished while we were waiting.
+        _personalizationDone = true;
+        _countdownStarted = true; // prevent any duplicate from telemetry callback
+        _startCountdown();
+        animate();
+    }
+);
+personalizationManager.init();
 
 // Camera
 const camController = new CameraController(camera, character);
@@ -334,7 +358,10 @@ function animate() {
 
     renderer.render(scene, camera);
 }
-animate();
+// NOTE: animate() is now called by PersonalizationManager.onComplete(),
+// not directly here. This prevents the game loop from running during
+// personalization. If personalization is already handled (e.g. dev reload),
+// it remains deferred until the overlay is dismissed.
 
 // Resize
 window.addEventListener("resize", () => {
