@@ -3,7 +3,7 @@ import { ChunkFactory } from "./ChunkFactory.js";
 import { CONFIG } from "../config.js";
 
 export class LevelManager {
-    constructor(scene) {
+    constructor(scene, options = {}) {
         this.scene = scene;
         this.chunks = [];
         this.factory = new ChunkFactory();
@@ -28,6 +28,18 @@ export class LevelManager {
         this.justTurned = false;
         this.hasHadFirstJunction = false;
 
+        // Deferred mode: don't generate chunks yet — call initialize() later.
+        if (!options.deferred) {
+            this._initialSpawn();
+        }
+    }
+
+    /** Spawns the initial batch of corridor chunks. Call once after tutorial. */
+    initialize() {
+        this._initialSpawn();
+    }
+
+    _initialSpawn() {
         for (let i = 0; i < this.renderDistance; i++) {
             this._spawnSequence();
         }
