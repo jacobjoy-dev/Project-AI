@@ -12,6 +12,7 @@ export class CharacterController {
 
         // 2. Initialize Animator
         this.animator = new CharacterAnimator(this.parts);
+        this.group.animator = this.animator; // Wire for LevelManager access
     }
 
     update() {

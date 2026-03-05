@@ -3,10 +3,11 @@ import { ChunkFactory } from "./ChunkFactory.js";
 import { CONFIG } from "../config.js";
 
 export class LevelManager {
-    constructor(scene) {
+    constructor(scene, options = {}) {
         this.scene = scene;
         this.chunks = [];
         this.factory = new ChunkFactory();
+        this.factory.setScene(scene);
 
         this.chunkLength = CONFIG.CHUNK_LENGTH;
         this.renderDistance = CONFIG.RENDER_DISTANCE;
@@ -28,15 +29,20 @@ export class LevelManager {
         this.justTurned = false;
         this.hasHadFirstJunction = false;
 
-        this.waitForTutorial = true; // Wait until tutorial finishes before spawning
-
-        if (!this.waitForTutorial) {
-            this.startProceduralGeneration();
+        // Deferred mode: don't generate chunks yet — call initialize() later.
+        if (!options.deferred) {
+            this._initialSpawn();
         }
     }
 
-    startProceduralGeneration() {
-        this.waitForTutorial = false;
+    /** Spawns the initial batch of corridor chunks. Call once after tutorial. */
+    initialize() {
+        if (this._initialized) return;
+        this._initialSpawn();
+        this._initialized = true;
+    }
+
+    _initialSpawn() {
         for (let i = 0; i < this.renderDistance; i++) {
             this._spawnSequence();
         }
@@ -80,7 +86,11 @@ export class LevelManager {
 
         this.worldContainer.rotation.y += angle;
 
-        if (characterGroup) {
+        if (characterGroup && characterGroup.animator) {
+            // Smoothly rotate the character by updating the target
+            characterGroup.animator.targetRotationY += angle;
+        } else if (characterGroup) {
+            // Fallback to snap if animator is not wired
             characterGroup.rotation.y += angle;
         }
 

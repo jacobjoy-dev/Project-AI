@@ -6,6 +6,9 @@ export class CharacterAnimator {
         this.walkCycle = 0;
         this.speed = 0;      // Exposed so GameManager can read it
         this.maxSpeed = 0.15;
+
+        // Rotation & Leaning
+        this.targetRotationY = 0;
     }
 
     update(input) {
@@ -53,8 +56,12 @@ export class CharacterAnimator {
         // 4. HEAD idle sway
         this.parts.headGroup.rotation.y = Math.sin(Date.now() * 0.001) * 0.05;
 
-        // 5. Lock torso rotation
+        // 5. TURN INTERPOLATION (90 deg turns)
+        this.parts.group.rotation.y = THREE.MathUtils.lerp(this.parts.group.rotation.y, this.targetRotationY, 0.1);
+
+        // 6. Lock torso rotation
         this.parts.torso.rotation.y = 0;
+        this.parts.torso.rotation.z = 0;
     }
 
     _updateArm(arm, degrees, waveDegrees, isLeft) {

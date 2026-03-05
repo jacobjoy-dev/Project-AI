@@ -12,7 +12,7 @@ export class HolographicGuide {
         this.timer = 0; // For walk cycle
 
         // UI Handles
-        this.overlay = document.getElementById("tutorial-overlay");
+        this.overlay = document.getElementById("tutorial-hud");
         this.textEl = document.getElementById("tutorial-text");
         this.subtextEl = document.getElementById("tutorial-subtext");
 

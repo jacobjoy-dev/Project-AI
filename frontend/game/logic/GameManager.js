@@ -21,6 +21,9 @@ export class GameManager {
         this.endTime = null;
         this.globalTime = "00:00.00";
         this.timerActive = false;
+
+        /** Optional callback(newLevel) fired when the level increments. */
+        this.onLevelChange = null;
     }
 
     // ── Converts elapsed ms into "MM:SS.cs" (centiseconds) ───────────────────
@@ -50,6 +53,7 @@ export class GameManager {
             this.gameState = "DOOR_OPENING";
             if (this.level > prevLevel) {
                 if (this.onFlash) this.onFlash("cyan", "LEVEL " + this.level + " SECURED");
+                if (this.onLevelChange) this.onLevelChange(this.level);
             } else {
                 if (this.onFlash) this.onFlash("cyan", "SYSTEM OVERRIDE SUCCESSFUL");
             }
@@ -149,6 +153,7 @@ export class GameManager {
             //this.startTime = Date.now();
             this.endTime = null;
             this.character.group.rotation.set(0, 0, 0);
+            this.character.animator.targetRotationY = 0;
             this.levelManager.resetToStart();
             this.gameState = "RUNNING";
             if (this.onFlash) this.onFlash("red", "INCORRECT - YOU LOSE A LIFE");
