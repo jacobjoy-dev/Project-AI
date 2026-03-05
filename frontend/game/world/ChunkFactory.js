@@ -21,8 +21,11 @@ export class ChunkFactory {
             pillar: new THREE.BoxGeometry(1.5, this.wallHeight + 1, 2),
             pillarNeon: new THREE.BoxGeometry(1.6, this.wallHeight, 0.2),
             trim: new THREE.BoxGeometry(0.5, 0.2, this.chunkLength),
-            blockWall: new THREE.BoxGeometry(this.chunkWidth + 10, this.wallHeight, 1)
         };
+    }
+
+    setScene(scene) {
+        this._scene = scene;
     }
 
     /**
@@ -49,8 +52,13 @@ export class ChunkFactory {
         if (this._scene) {
             const fogColors = { 1: 0x050505, 2: 0x08010f, 3: 0x0f0101 };
             const fogColor = fogColors[level] || fogColors[1];
-            this._scene.background?.setHex(fogColor);
-            if (this._scene.fog) this._scene.fog.color.setHex(fogColor);
+
+            if (this._scene.background && typeof this._scene.background.setHex === 'function') {
+                this._scene.background.setHex(fogColor);
+            }
+            if (this._scene.fog) {
+                this._scene.fog.color.setHex(fogColor);
+            }
         }
     }
 

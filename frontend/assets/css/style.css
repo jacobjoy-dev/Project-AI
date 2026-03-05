@@ -125,7 +125,7 @@
 
 #tutorial-hud {
     position: fixed;
-    bottom: 36px;
+    bottom: 28px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 9000;
@@ -1192,28 +1192,12 @@ body {
     background: linear-gradient(90deg, #00ffff, #00ff88);
     box-shadow: 0 0 8px rgba(0, 255, 255, 0.7);
     border-radius: 2px;
-    transition: width linear;
+    transition: width 0.1s linear;
 }
 
 /* ═══════════════════════════════════════════
    TUTORIAL HUD HINT (free-play bottom bar)
 ═══════════════════════════════════════════ */
-
-#tutorial-hud {
-    position: fixed;
-    bottom: 28px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9000;
-    opacity: 1;
-    transition: opacity 0.4s ease, transform 0.4s ease;
-}
-
-#tutorial-hud.hidden {
-    opacity: 0;
-    transform: translate(-50%, 14px);
-    pointer-events: none;
-}
 
 .tutorial-hud-inner {
     display: flex;

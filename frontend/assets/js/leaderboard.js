@@ -3,16 +3,32 @@ import { CONFIG } from "../../game/config.js";
 const lbBody = document.getElementById("lb-body");
 const lbStatus = document.getElementById("lb-status");
 
+// Helper to prevent XSS from user-submitted names/classes
+function escapeHTML(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 // Connect to the same socket URL used by the game
 const socket = io(CONFIG.SOCKET_URL);
 
 socket.on("connect", () => {
     console.log("Connected to server, requesting leaderboard...");
-    lbStatus.textContent = "FETCHING RECORDS...";
+    if (lbStatus) lbStatus.textContent = "FETCHING RECORDS...";
     socket.emit("request_leaderboard");
 });
 
 socket.on("leaderboard_update", (data) => {
+    // Clear the "FETCHING RECORDS..." message
+    if (lbStatus) lbStatus.textContent = "";
+
+    if (!lbBody) return;
+
     if (!Array.isArray(data) || data.length === 0) {
         lbBody.innerHTML = `
             <tr>
@@ -39,10 +55,10 @@ socket.on("leaderboard_update", (data) => {
         tr.innerHTML = `
             <td>#${rank}</td>
             <td>
-                <div class="lb-name">${entry.name}</div>
-                <div class="lb-class">ID: ${entry.class}</div>
+                <div class="lb-name">${escapeHTML(entry.name)}</div>
+                <div class="lb-class">ID: ${escapeHTML(entry.class)}</div>
             </td>
-            <td>${entry.time_str}</td>
+            <td>${escapeHTML(entry.time_str)}</td>
         `;
 
         lbBody.appendChild(tr);
@@ -50,11 +66,27 @@ socket.on("leaderboard_update", (data) => {
 });
 
 socket.on("disconnect", () => {
-    lbBody.innerHTML = `
-        <tr>
-            <td colspan="3">
-                <div class="status-msg" style="color: #ff2244;">CONNECTION LOST</div>
-            </td>
-        </tr>
-    `;
+    if (lbBody) {
+        lbBody.innerHTML = `
+            <tr>
+                <td colspan="3">
+                    <div class="status-msg" style="color: #ff2244;">CONNECTION LOST</div>
+                </td>
+            </tr>
+        `;
+    }
+});
+
+socket.on("connect_error", (error) => {
+    console.warn("Leaderboard socket connection error:", error);
+    if (lbStatus) lbStatus.textContent = "CONNECTION ERROR";
+    if (lbBody) {
+        lbBody.innerHTML = `
+            <tr>
+                <td colspan="3">
+                    <div class="status-msg" style="color: #ff2244;">UNABLE TO CONNECT TO SERVER</div>
+                </td>
+            </tr>
+        `;
+    }
 });

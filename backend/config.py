@@ -64,4 +64,4 @@ CALIB_PROGRESS_FRAMES = 60   # Denominator for calib progress 0.0 → 1.0
 # This avoids burning API quota during development / testing.
 #
 # ✅ To go back to live AI questions:  set DEV_SKIP_AI_QUESTIONS = False
-DEV_SKIP_AI_QUESTIONS = True
+DEV_SKIP_AI_QUESTIONS = False

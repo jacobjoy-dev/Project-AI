@@ -7,6 +7,7 @@ export class LevelManager {
         this.scene = scene;
         this.chunks = [];
         this.factory = new ChunkFactory();
+        this.factory.setScene(scene);
 
         this.chunkLength = CONFIG.CHUNK_LENGTH;
         this.renderDistance = CONFIG.RENDER_DISTANCE;
@@ -36,7 +37,9 @@ export class LevelManager {
 
     /** Spawns the initial batch of corridor chunks. Call once after tutorial. */
     initialize() {
+        if (this._initialized) return;
         this._initialSpawn();
+        this._initialized = true;
     }
 
     _initialSpawn() {

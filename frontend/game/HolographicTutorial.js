@@ -90,26 +90,28 @@ export class HolographicTutorial {
         // Scroll grid in Stage 1 to feel like movement
         if (this._floorGrid && this._stage === 1) {
             const mom = (this._input && this._input.momentum) || 0;
-            this._floorGrid.position.z = ((this._floorGrid.position.z + mom * 0.4) % 2);
+            const newZ = this._floorGrid.position.z + mom * 0.4;
+            // Floor-based modulo to handle potential negative momentum safely
+            this._floorGrid.position.z = ((newZ % 2) + 2) % 2;
         }
 
         // Stage 2: reactive edge glow driven by REAL telemetry
         if (this._stage === 2) {
             const turn = this._input && this._input.turn;
             if (turn === 'LEFT') {
-                this._glowLeft.classList.add('glow-on');
-                this._glowRight.classList.remove('glow-on');
+                if (this._glowLeft) this._glowLeft.classList.add('glow-on');
+                if (this._glowRight) this._glowRight.classList.remove('glow-on');
                 if (this._arrL) this._arrL.classList.add('active');
                 if (this._arrR) this._arrR.classList.remove('active');
             } else if (turn === 'RIGHT') {
-                this._glowRight.classList.add('glow-on');
-                this._glowLeft.classList.remove('glow-on');
+                if (this._glowRight) this._glowRight.classList.add('glow-on');
+                if (this._glowLeft) this._glowLeft.classList.remove('glow-on');
                 if (this._arrR) this._arrR.classList.add('active');
                 if (this._arrL) this._arrL.classList.remove('active');
             } else {
                 // Centred — dim both
-                this._glowLeft.classList.remove('glow-on');
-                this._glowRight.classList.remove('glow-on');
+                if (this._glowLeft) this._glowLeft.classList.remove('glow-on');
+                if (this._glowRight) this._glowRight.classList.remove('glow-on');
                 if (this._arrL) this._arrL.classList.remove('active');
                 if (this._arrR) this._arrR.classList.remove('active');
             }
@@ -123,9 +125,9 @@ export class HolographicTutorial {
         this._stage = n;
 
         const def = this._stages[n - 1];
-        this._hudLabel.textContent = def.label;
-        this._hudText.innerHTML = def.text(this._playerName);
-        this._hud.classList.remove('hidden');
+        if (this._hudLabel) this._hudLabel.textContent = def.label;
+        if (this._hudText) this._hudText.innerHTML = def.text(this._playerName);
+        if (this._hud) this._hud.classList.remove('hidden');
 
         this.freezeCharacter = false;
         this.freezeWalkOnly = false;
@@ -142,16 +144,18 @@ export class HolographicTutorial {
 
     // ── Stage 2 lean card (static — reacts to real input in update()) ────────
     _showLeanCard() {
-        this._glowLeft.classList.remove('hidden');
-        this._glowRight.classList.remove('hidden');
+        if (this._glowLeft) this._glowLeft.classList.remove('hidden');
+        if (this._glowRight) this._glowRight.classList.remove('hidden');
 
-        this._demoContent.innerHTML = `
-            <div class="tut-demo-arrows">
-                <span class="tut-demo-arrow" id="demo-arr-left">&#8592; LEAN</span>
-                <span class="tut-demo-label" style="white-space:nowrap">SHIFT YOUR WEIGHT</span>
-                <span class="tut-demo-arrow" id="demo-arr-right">LEAN &#8594;</span>
-            </div>`;
-        this._demoCard.classList.remove('hidden');
+        if (this._demoContent) {
+            this._demoContent.innerHTML = `
+                <div class="tut-demo-arrows">
+                    <span class="tut-demo-arrow" id="demo-arr-left">&#8592; LEAN</span>
+                    <span class="tut-demo-label" style="white-space:nowrap">SHIFT YOUR WEIGHT</span>
+                    <span class="tut-demo-arrow" id="demo-arr-right">LEAN &#8594;</span>
+                </div>`;
+        }
+        if (this._demoCard) this._demoCard.classList.remove('hidden');
 
         this._arrL = document.getElementById('demo-arr-left');
         this._arrR = document.getElementById('demo-arr-right');
@@ -159,34 +163,40 @@ export class HolographicTutorial {
 
     // ── Stage 3 hand card (auto-hides after 1.5 s, arms are live after) ─────
     _showHandCard() {
-        this._demoContent.innerHTML = `
-            <div class="tut-demo-label">RAISE EITHER ARM ABOVE YOUR SHOULDER</div>
-            <div class="tut-demo-hands">
-                <div class="tut-demo-hand active" id="demo-hand-left">🤚</div>
-                <div class="tut-demo-label" style="align-self:center;font-size:1.4rem;opacity:0.5">OR</div>
-                <div class="tut-demo-hand active" id="demo-hand-right">🤚</div>
-            </div>`;
-        this._demoCard.classList.remove('hidden');
+        if (this._demoContent) {
+            this._demoContent.innerHTML = `
+                <div class="tut-demo-label">RAISE EITHER ARM ABOVE YOUR SHOULDER</div>
+                <div class="tut-demo-hands">
+                    <div class="tut-demo-hand active" id="demo-hand-left">🤚</div>
+                    <div class="tut-demo-label" style="align-self:center;font-size:1.4rem;opacity:0.5">OR</div>
+                    <div class="tut-demo-hand active" id="demo-hand-right">🤚</div>
+                </div>`;
+        }
+        if (this._demoCard) this._demoCard.classList.remove('hidden');
 
         // Auto-hide after 1.5 s so character arms take over
         this._demoTimeout = setTimeout(() => {
-            this._demoCard.classList.add('hidden');
-            this._demoContent.innerHTML = '';
+            if (this._demoCard) this._demoCard.classList.add('hidden');
+            if (this._demoContent) this._demoContent.innerHTML = '';
         }, 1500);
     }
 
     _clearDemos() {
         clearTimeout(this._demoTimeout);
         this._demoTimeout = null;
-        this._demoCard.classList.add('hidden');
-        this._demoContent.innerHTML = '';
+        if (this._demoCard) this._demoCard.classList.add('hidden');
+        if (this._demoContent) this._demoContent.innerHTML = '';
         this._arrL = null;
         this._arrR = null;
 
-        this._glowLeft.classList.add('hidden');
-        this._glowLeft.classList.remove('glow-on');
-        this._glowRight.classList.add('hidden');
-        this._glowRight.classList.remove('glow-on');
+        if (this._glowLeft) {
+            this._glowLeft.classList.add('hidden');
+            this._glowLeft.classList.remove('glow-on');
+        }
+        if (this._glowRight) {
+            this._glowRight.classList.add('hidden');
+            this._glowRight.classList.remove('glow-on');
+        }
     }
 
     _handleKeyDown(e) {
@@ -207,7 +217,7 @@ export class HolographicTutorial {
         this.freezeCharacter = false;
         this.freezeWalkOnly = false;
 
-        this._hud.classList.add('hidden');
+        if (this._hud) this._hud.classList.add('hidden');
         this._clearDemos();
         if (this._gameHud) this._gameHud.style.display = '';
 
@@ -268,6 +278,21 @@ export class HolographicTutorial {
 
     _cleanup() {
         if (this._worldGroup) {
+            // Traverse and dispose geometries/materials to free GPU memory
+            this._worldGroup.traverse((child) => {
+                if (child.geometry) {
+                    child.geometry.dispose();
+                }
+                if (child.material) {
+                    // material can be an array in some cases
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(m => m.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                }
+            });
+
             this._scene.remove(this._worldGroup);
             this._worldGroup = null;
         }

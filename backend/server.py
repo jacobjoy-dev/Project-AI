@@ -204,16 +204,16 @@ def request_questions(sid, data):
     if DEV_SKIP_AI_QUESTIONS:
         print(f"[LLM] [{sid}] ⚠️ DEV_SKIP_AI_QUESTIONS=True — returning fallback questions.")
         fallback = [
-            {"text": "What is the powerhouse of the cell?",  "optA": "Mitochondria",    "optB": "Nucleus",       "answer": "A"},
-            {"text": "What planet is closest to the Sun?",   "optA": "Venus",           "optB": "Mercury",      "answer": "B"},
-            {"text": "How many sides does a hexagon have?",  "optA": "6",               "optB": "8",            "answer": "A"},
-            {"text": "What is the chemical symbol for water?", "optA": "H2O",          "optB": "CO2",          "answer": "A"},
-            {"text": "Who wrote Romeo and Juliet?",           "optA": "Shakespeare",    "optB": "Dickens",      "answer": "A"},
-            {"text": "What is 7 × 8?",                       "optA": "54",              "optB": "56",           "answer": "B"},
-            {"text": "What gas do plants absorb?",           "optA": "Oxygen",          "optB": "Carbon Dioxide","answer": "B"},
-            {"text": "What is the largest ocean on Earth?",  "optA": "Pacific",         "optB": "Atlantic",     "answer": "A"},
-            {"text": "What colour is the sky?",              "optA": "Blue",            "optB": "Green",        "answer": "A"},
-            {"text": "How many continents are there?",        "optA": "6",               "optB": "7",            "answer": "B"},
+            {"text": "What is the powerhouse of the cell?",  "optA": "A) Mitochondria",    "optB": "B) Nucleus",       "answer": "A"},
+            {"text": "What planet is closest to the Sun?",   "optA": "A) Venus",           "optB": "B) Mercury",      "answer": "B"},
+            {"text": "How many sides does a hexagon have?",  "optA": "A) 6",               "optB": "B) 8",            "answer": "A"},
+            {"text": "What is the chemical symbol for water?", "optA": "A) H2O",           "optB": "B) CO2",          "answer": "A"},
+            {"text": "Who wrote Romeo and Juliet?",           "optA": "A) Shakespeare",     "optB": "B) Dickens",      "answer": "A"},
+            {"text": "What is 7 × 8?",                       "optA": "A) 54",              "optB": "B) 56",           "answer": "B"},
+            {"text": "What gas do plants absorb?",           "optA": "A) Oxygen",          "optB": "B) Carbon Dioxide","answer": "B"},
+            {"text": "What is the largest ocean on Earth?",  "optA": "A) Pacific",         "optB": "B) Atlantic",     "answer": "A"},
+            {"text": "What colour is the sky?",              "optA": "A) Blue",            "optB": "B) Green",        "answer": "A"},
+            {"text": "How many continents are there?",        "optA": "A) 6",               "optB": "B) 7",            "answer": "B"},
         ]
         sio.emit('questions_ready', fallback, to=sid)
         return
@@ -263,7 +263,7 @@ def submit_score(sid, data):
     time_ms = data.get('time_ms')
     time_str = data.get('time_str')
 
-    if not time_ms or not time_str:
+    if time_ms is None or not time_str:
         return
 
     player_info = _player_registry.get(sid, {'name': 'Unknown', 'class': 'N/A'})
