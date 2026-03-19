@@ -89,6 +89,7 @@ Project-AI/
 | Backend server | Python + `eventlet` + `python-socketio` |
 | 3D rendering | [Three.js r160](https://threejs.org/) (CDN, no build step) |
 | Frontend comms | Socket.IO v4 (CDN) |
+| LLM API | Google Gemini REST API (gemini-2.5-flash) |
 | Fonts | Google Fonts — Orbitron, Rajdhani |
 
 ---
@@ -144,9 +145,22 @@ python-socketio
 opencv-python-headless
 mediapipe
 numpy
+python-dotenv
+requests
 ```
 
-### 4 — Download the MediaPipe model
+### 4 — Add Environment Variables
+
+Create a `.env` file in the root directory based on `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and fill in your values. Currently, this includes:
+- `GEMINI_API_KEY`: Your Google Gemini API key (optional for fallback questions, but required for custom topics).
+
+### 5 — Download the MediaPipe model
 
 Download `pose_landmarker_lite.task` from the [MediaPipe Models page](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker#models) and place it at:
 
@@ -157,10 +171,10 @@ backend/models/pose_landmarker_lite.task
 Create the `models/` directory if it does not exist:
 
 ```bash
-mkdir backend/models
+mkdir -p backend/models
 ```
 
-### 5 — Verify your webcam index
+### 6 — Verify your webcam index
 
 By default the server uses camera index `0` (the system default webcam).  
 If you have multiple cameras, edit `backend/config.py`:
@@ -228,6 +242,7 @@ Project-AI/
 ├── backend/
 │   ├── config.py                   # All backend tunable constants
 │   ├── server.py                   # Main entry point — WSGI + game loop
+│   ├── leaderboard.json            # Leaderboard data
 │   ├── motion_logic/
 │   │   ├── gesture_detection.py    # Arm-angle math
 │   │   ├── walking.py              # (reserved)
@@ -236,6 +251,7 @@ Project-AI/
 │       └── pose_landmarker_lite.task   # MediaPipe model (download separately)
 ├── frontend/
 │   ├── index.html
+│   ├── leaderboard.html            # Leaderboard UI
 │   ├── assets/
 │   │   ├── css/style.css
 │   │   └── js/game_engine.js
@@ -253,6 +269,7 @@ Project-AI/
 │           ├── LevelManager.js
 │           └── ChunkFactory.js
 ├── requirement.txt
+├── .env.example                    # Template for environment variables
 └── README.md
 ```
 
@@ -276,6 +293,7 @@ All tunable values are centralized in two files — no magic numbers exist in so
 | `MOMENTUM_DECAY` | `0.92` | Friction coefficient when not walking |
 | `CAMERA_INDEX` | `0` | OpenCV camera device index |
 | `SERVER_PORT` | `5000` | Port the backend listens on |
+| `DEV_SKIP_AI_QUESTIONS` | `False` | Bypass LLM generation and use fallback questions |
 
 ### `frontend/game/config.js`
 
